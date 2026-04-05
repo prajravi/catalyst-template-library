@@ -1,0 +1,35 @@
+{% set INTERFACE_LIST = INTERFACE_LIST %} {# INTERFACE_LIST: comma-separated e.g. GigabitEthernet1/0/1,GigabitEthernet1/0/2 #}
+{% set ACCESS_VLAN = ACCESS_VLAN %} {# ACCESS_VLAN: data VLAN number e.g. 100 #}
+{% set VOICE_VLAN = VOICE_VLAN %} {# VOICE_VLAN: voice VLAN number e.g. 150 or set to "none" to skip voice VLAN config #}
+{% set PORT_DESC = PORT_DESC %} {# PORT_DESC: interface description e.g. "PC-Floor2-Desk14" #}
+{% set BACKOUT = BACKOUT %} {# BACKOUT: set to "true" to restore defaults, anything else to apply #}
+
+{% if BACKOUT|lower == "true" %}
+{# BACKOUT: restore interface to layer-3 routed defaults #}
+{% for iface in INTERFACE_LIST.split(',') %}
+interface {{ iface.strip() }}
+ no description
+ no switchport access vlan
+ no switchport voice vlan
+ no switchport mode access
+ no spanning-tree portfast
+ no spanning-tree bpduguard enable
+ shutdown
+!
+{% endfor %}
+{% else %}
+{# APPLY: configure standard access port #}
+{% for iface in INTERFACE_LIST.split(',') %}
+interface {{ iface.strip() }}
+ description {{ PORT_DESC }}
+ switchport mode access
+ switchport access vlan {{ ACCESS_VLAN }}
+{% if VOICE_VLAN|lower != "none" %}
+ switchport voice vlan {{ VOICE_VLAN }}
+{% endif %}
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ no shutdown
+!
+{% endfor %}
+{% endif %}
